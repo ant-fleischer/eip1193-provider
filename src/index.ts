@@ -1,7 +1,17 @@
-import CustomProvider from './CustomProvider';
+import CircleEIP1193Provider from './CircleEIP1193Provider';
+import { config } from './config';
 
-const API_KEY = ""
-const ENTITY_SECRET = ""
+let provider: CircleEIP1193Provider | undefined;
 
-const provider = new CustomProvider(API_KEY, ENTITY_SECRET);
-export default provider;
+async function initializeProvider(): Promise<void> {
+  try {
+    provider = await CircleEIP1193Provider.create(config.apiKey, config.entitySecret);
+    console.log('Provider initialized successfully');
+  } catch (error) {
+    console.error('Error initializing provider:', error);
+  }
+}
+
+initializeProvider();
+
+export { provider };
