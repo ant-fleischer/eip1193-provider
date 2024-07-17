@@ -19,3 +19,8 @@ const existingWallet = new circle.Wallet("0x123", provider);
 const newWallet = new circle.Wallet(provider);
 newWallet.sendTransaction({});
 ```
+
+## Next steps
+1. Create a Wallet class. It should handle address look up and new wallet creation. 
+2. Implement read-only methods on `provider`. 
+3. Implement transaction creation and deployment on `wallet`.
