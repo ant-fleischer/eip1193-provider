@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import { encryptEntitySecret } from "./utils/helpers";
+import { encryptEntitySecret } from './utils/helpers';
 
 const API_URL = 'https://api.circle.com/v1/w3s';
 
@@ -21,28 +21,39 @@ interface PublicKeyResponse {
   };
 }
 
+interface NewWalletResponse {
+  data: {
+    wallets: Array<{
+      id: string;
+      address: string;
+      blockchain: string;
+      createDate: string;
+      updateDate: string;
+    }>;
+  };
+}
+
 class CircleEIP1193Provider {
   private apiKey: string;
-  private entitySecret: string;
   private client: AxiosInstance;
   private publicKey: string | undefined;
   private walletSetId: string | undefined;
+  private wallets: Map<string, string>;
 
-  private constructor(apiKey: string, entitySecret: string) {
+  private constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.entitySecret = entitySecret;
     this.client = axios.create({
       baseURL: API_URL,
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
       },
     });
+    this.wallets = new Map();
   }
 
   async fetchPublicKey(): Promise<string | undefined> {
     try {
       const response = await this.client.get<PublicKeyResponse>('/config/entity/publicKey');
-      // console.log(response);
       return response.data.data.publicKey;
     } catch (error) {
       console.error('Error fetching public key:', error);
@@ -53,8 +64,7 @@ class CircleEIP1193Provider {
   async createWalletSet(): Promise<string | undefined> {
     try {
       const data = { entitySecretCiphertext: encryptEntitySecret(this.publicKey!), idempotencyKey: uuidv4(), name: 'Wallet Set A' };
-      const response = await this.client.post<WalletSetResponse>('/developer/walletSets', data)
-      // console.log(response);
+      const response = await this.client.post<WalletSetResponse>('/developer/walletSets', data);
       return response.data.data.walletSet.id;
     } catch (error) {
       console.error('Error creating wallet set:', error);
@@ -62,8 +72,32 @@ class CircleEIP1193Provider {
     }
   }
 
-  public static async create(apiKey: string, entitySecret: string): Promise<CircleEIP1193Provider> {
-    const instance = new CircleEIP1193Provider(apiKey, entitySecret);
+  async createWallet(): Promise<NewWalletResponse | undefined> {
+    if (!this.walletSetId) {
+      throw new Error('Wallet set ID is not defined');
+    }
+    try {
+      const data = {
+        idempotencyKey: uuidv4(),
+        walletSetId: this.walletSetId,
+        accountType: 'SCA',
+        blockchains: ['MATIC-AMOY', 'ETH-SEPOLIA'],
+        count: 1,
+        entitySecretCiphertext: encryptEntitySecret(this.publicKey!)
+      };
+      const response = await this.client.post<NewWalletResponse>('/developer/wallets', data);
+      response.data.data.wallets.forEach((wallet) => {
+        this.wallets.set(wallet.blockchain, wallet.address);
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating wallet:', error);
+      return undefined;
+    }
+  }
+
+  public static async create(apiKey: string): Promise<CircleEIP1193Provider> {
+    const instance = new CircleEIP1193Provider(apiKey);
     const publicKey = await instance.fetchPublicKey();
     if (!publicKey) {
       throw new Error('Failed to fetch public key');

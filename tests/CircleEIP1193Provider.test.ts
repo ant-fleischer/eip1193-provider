@@ -6,7 +6,7 @@ describe('CircleEIP1193Provider', () => {
   let provider: CircleEIP1193Provider;
 
   beforeAll(async () => {
-    provider = await CircleEIP1193Provider.create(config.apiKey, config.entitySecret);
+    provider = await CircleEIP1193Provider.create(config.apiKey);
   });
 
   test('publicKey should be a non-null string', () => {
@@ -26,16 +26,4 @@ describe('CircleEIP1193Provider', () => {
     });
 
   });
-
-  // test('should request accounts', async () => {
-  //   const accounts = await provider.request({ method: 'eth_requestAccounts', params: [] });
-  //   expect(accounts).toBeInstanceOf(Array);
-  //   expect(accounts.length).toBeGreaterThan(0);
-  // });
-
-  // test('should send a transaction', async () => {
-  //   const transactionParams = [{ /* your transaction params */ }];
-  //   const transactionHash = await provider.request({ method: 'eth_sendTransaction', params: transactionParams });
-  //   expect(typeof transactionHash).toBe('string');
-  // });
-});
+})
