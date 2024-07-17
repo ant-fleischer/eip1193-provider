@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import { encryptEntitySecret } from "./utils/helpers"
+import {v4 as uuidv4} from 'uuid';
+import { encryptEntitySecret } from "./utils/helpers";
 
 const API_URL = 'https://api.circle.com/v1/w3s';
 
@@ -25,6 +26,7 @@ class CircleEIP1193Provider {
   private entitySecret: string;
   private client: AxiosInstance;
   private publicKey: string | undefined;
+  private walletSetId: string | undefined;
 
   private constructor(apiKey: string, entitySecret: string) {
     this.apiKey = apiKey;
@@ -50,9 +52,8 @@ class CircleEIP1193Provider {
 
   async createWalletSet(publicKey: string): Promise<string | undefined> {
     try {
-      const encryptedEntitySecret = encryptEntitySecret(publicKey);
-      const data = {entitySecretCiphertext: encryptedEntitySecret, idempotencyKey: '85caf545-770c-429a-8eaa-72d8f01974c3', name: 'Wallet Set A'};
-      const response = await this.client.post('/developer/walletSets', data)
+      const data = {entitySecretCiphertext: encryptEntitySecret(publicKey), idempotencyKey: uuidv4(), name: 'Wallet Set A'};
+      const response = await this.client.post<WalletSetResponse>('/developer/walletSets', data)
       console.log(response);
       return response.data.data.walletSet.id;
     } catch (error) {
@@ -73,6 +74,7 @@ class CircleEIP1193Provider {
     if (!walletSetId) {
       throw new Error('Failed to get wallet set Id');
     }
+    instance.walletSetId = walletSetId;
 
     return instance;
   }
