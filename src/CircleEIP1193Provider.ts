@@ -21,6 +21,13 @@ interface PublicKeyResponse {
   };
 }
 
+interface QueryContractResponse {
+  data: {
+    outputValues: Array<string>;
+    outputData: string;
+  };
+}
+
 class CircleEIP1193Provider {
   private apiKey: string;
   private entitySecret: string;
@@ -58,6 +65,18 @@ class CircleEIP1193Provider {
       return response.data.data.walletSet.id;
     } catch (error) {
       console.error('Error creating wallet set:', error);
+      return undefined;
+    }
+  }
+
+  async queryContractState(address: string, blockchain: string, abiFunctionSignature?: string, abiParameters?: Array<string>): Promise<string| undefined> {
+    try {
+      const data: { address: string; blockchain: string; abiFunctionSignature?: string | null; abiParameters?: Array<string> | null } = { address, blockchain, abiFunctionSignature: abiFunctionSignature || null, abiParameters: abiParameters || null, };
+      const response = await this.client.post<QueryContractResponse>('/contracts/query', data)
+      console.log(response);
+      return response.data.data.outputData;
+    } catch (error) {
+      console.error('Error querying contract state:', error);
       return undefined;
     }
   }
