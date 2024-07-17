@@ -10,10 +10,19 @@ describe('CircleEIP1193Provider', () => {
   });
 
   test('publicKey should be a non-null string', () => {
-        return provider.fetchPublicKey().then(publicKey => {
+    return provider.fetchPublicKey().then(publicKey => {
       console.log('Fetched Public Key:', publicKey);
       expect(publicKey).not.toBeNull();
       expect(typeof publicKey).toBe('string');
+    });
+
+  });
+
+  test('wallet set should be non-null UUID string', () => {
+    return provider.createWalletSet().then(walletSetId => {
+      console.log('Created wallet set:', walletSetId);
+      expect(walletSetId).not.toBeNull();
+      expect(typeof walletSetId).toBe('string');
     });
 
   });
