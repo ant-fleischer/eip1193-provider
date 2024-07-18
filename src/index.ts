@@ -1,17 +1,37 @@
-import CircleEIP1193Provider from './CircleEIP1193Provider';
+import { ethers } from 'ethers';
+import { setupCircleProvider } from './setupCircleProvider';
 import { config } from './config';
 
-let provider: CircleEIP1193Provider | undefined;
+const usdcContractAddress = ethers.getAddress('0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238');
+const balanceOfAbi = [
+  "function balanceOf(address account) view returns (uint256)"
+];
 
-async function initializeProvider(): Promise<void> {
+async function main() {
   try {
-    provider = await CircleEIP1193Provider.create(config.apiKey);
+    const circleProvider = await setupCircleProvider(config.apiKey);
+    const provider = new ethers.BrowserProvider(circleProvider);
+
     console.log('Provider initialized successfully');
+
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    console.log(`Signer Address: ${address}`);
+
+    const iface = new ethers.Interface(balanceOfAbi);
+    const data = iface.encodeFunctionData('balanceOf', [address]);
+
+    const params = [{
+      to: usdcContractAddress,
+      data: data
+    }];
+
+    const result = await provider.send('eth_call', params);
+
+    console.log(result)
   } catch (error) {
     console.error('Error initializing provider:', error);
   }
 }
 
-initializeProvider();
-
-export { provider };
+main();
