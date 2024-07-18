@@ -88,12 +88,25 @@ class CircleEIP1193Provider implements ethers.Provider {
       case 'eth_accounts':
         return Array.from(this.wallets.values());
       // Handle other methods as per your specific Circle API capabilities
+      case 'eth_call':
+        if (!args.params || args.params.length < 2) {
+          throw new Error('eth_call requires a transaction object and optionally a block tag');
+        }
+        return this.call(args.params[0] as TransactionRequest);
       default:
         throw new Error(`Method ${args.method} not supported by Circle API`);
     }
   }
 
   // Implemented EIP-1193 methods
+  call(tx: TransactionRequest, blockTag: string = 'latest'): Promise<string> { 
+    const res = this.queryContractState(tx.to as string, blockTag);
+    if (!res) {
+      throw new Error("call couldn\'t query contract state");
+    }
+    return res as Promise<string>;
+  }
+
   getSigner(): CircleSigner {
     return new CircleSigner(this)
   }
@@ -172,10 +185,6 @@ class CircleEIP1193Provider implements ethers.Provider {
     })
   }
 
-
-
-
-
   async queryContractState(address: string, blockchain: string, abiFunctionSignature?: string, abiParameters?: Array<string>): Promise<string | undefined> {
     try {
       const data: { address: string; blockchain: string; abiFunctionSignature?: string | null; abiParameters?: Array<string> | null } = {
@@ -204,7 +213,7 @@ class CircleEIP1193Provider implements ethers.Provider {
   getCode(address: ethers.AddressLike, blockTag?: ethers.BlockTag): Promise<string> { throw new Error('Method not implemented.'); }
   getStorage(address: ethers.AddressLike, position: ethers.BigNumberish, blockTag?: ethers.BlockTag): Promise<string> { throw new Error('Method not implemented.'); }
   estimateGas(tx: TransactionRequest): Promise<bigint> { throw new Error('Method not implemented.'); }
-  call(tx: TransactionRequest): Promise<string> { throw new Error('Method not implemented.'); }
+  // call(tx: TransactionRequest): Promise<string> { throw new Error('Method not implemented.'); }
   broadcastTransaction(signedTx: string): Promise<TransactionResponse> { throw new Error('Method not implemented.'); }
   getBlock(blockHashOrBlockTag: ethers.BlockTag | string, prefetchTxs?: boolean): Promise<null | ethers.Block> { throw new Error('Method not implemented.'); }
   getTransaction(hash: string): Promise<null | TransactionResponse> { throw new Error('Method not implemented.'); }
