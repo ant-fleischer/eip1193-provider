@@ -1,4 +1,4 @@
-import { ethers, Signer, TransactionLike, TransactionRequest, TransactionResponse } from 'ethers';
+import { ethers, Signer, TransactionRequest, TransactionResponse } from 'ethers';
 import CircleEIP1193Provider from './CircleEIP1193Provider';
 
 class CircleSigner implements ethers.Signer {
@@ -26,11 +26,11 @@ class CircleSigner implements ethers.Signer {
         throw new Error('Signing messages is not supported by the Circle API');
     }
 
-    populateCall(): Promise<TransactionLike<string>> {
+    populateCall(): Promise<ethers.TransactionLike<string>> {
         throw new Error('Signing messages is not supported by the Circle API');
     }
 
-    populateTransaction(): Promise<TransactionLike<string>> {
+    populateTransaction(): Promise<ethers.TransactionLike<string>> {
         throw new Error('Signing messages is not supported by the Circle API');
     }
 
@@ -44,22 +44,17 @@ class CircleSigner implements ethers.Signer {
 
     resolveName(): Promise<string | null> {
         throw new Error('Signing messages is not supported by the Circle API');
-
     }
 
     sendTransaction(): Promise<TransactionResponse>{
         throw new Error('Signing messages is not supported by the Circle API');
-
     }
 
     signTypedData(): Promise<string>{
         throw new Error('Signing messages is not supported by the Circle API');
-
     }
 
-
     connect(provider: CircleEIP1193Provider): Signer {
-
         return new CircleSigner(provider);
     }
 }

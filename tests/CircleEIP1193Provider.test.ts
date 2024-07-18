@@ -11,7 +11,7 @@ describe('CircleEIP1193Provider', () => {
   });
 
   test('publicKey should be a non-null string', async () => {
-    const publicKey = await provider.fetchPublicKey();
+    const publicKey = await provider.getPublicKey();
     console.log('Fetched Public Key:', publicKey);
     expect(publicKey).not.toBeNull();
     expect(typeof publicKey).toBe('string');
