@@ -1,6 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { encryptEntitySecret } from './utils/helpers';
+import { ethers, TransactionRequest, TransactionResponse } from 'ethers';
+import CircleSigner from './CircleSigner';
 
 const API_URL = 'https://api.circle.com/v1/w3s';
 
@@ -20,6 +22,16 @@ interface PublicKeyResponse {
     publicKey: string;
   };
 }
+
+const CircleToEcosystemBlockchainMap: Map<string, string> = new Map([
+  ['ETH-SEPOLIA', 'sepolia'],
+  ['MATIC-AMOY', 'amoy']
+]);
+
+const EcosystemToCircleBlockchainMap: Map<string, string> = new Map([
+  ['sepolia', 'ETH-SEPOLIA'],
+  ['amoy', 'MATIC-AMOY']
+]);
 
 interface NewWalletResponse {
   data: {
@@ -46,15 +58,59 @@ class CircleEIP1193Provider {
   private walletSetId: string | undefined;
   private wallets: Map<string, string>;
 
-  private constructor(apiKey: string) {
+  constructor(apiKey: string, publicKey: string = '', walletSetId: string = '', network: string = 'sepolia') {
+    super(network);
+
     this.apiKey = apiKey;
+    this.publicKey = publicKey;
+    this.walletSetId = walletSetId;
+
     this.client = axios.create({
       baseURL: API_URL,
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
       },
     });
+
     this.wallets = new Map();
+  }
+  async request(args: { method: string; params?: Array<any> }): Promise<any> {
+    switch (args.method) {
+      case 'eth_blockNumber':
+        // Example: Returning a hardcoded block number as Circle API might not support block fetching
+        return 123456;
+      case 'eth_sendTransaction':
+        return "";
+      case 'eth_accounts':
+        return Array.from(this.wallets.values());
+      // Handle other methods as per your specific Circle API capabilities
+      default:
+        throw new Error(`Method ${args.method} not supported by Circle API`);
+    }
+  }
+
+  setPublicKey(publicKey: string): void {
+    this.publicKey = publicKey;
+  }
+
+  setWalletSetId(walletSetId: string): void {
+    this.walletSetId = walletSetId;
+  }
+
+  setWallet(wallets: NewWalletResponse): void {
+    wallets.data.wallets.forEach( (wallet) => {
+      this.wallets.set(wallet.blockchain, wallet.address);
+  })
+  }
+
+  getSigner(): CircleSigner {
+    return new CircleSigner(this)
+  }
+
+  getAddress(): string {
+
+
+    return this.wallets.get(this.getNetwork())
   }
 
   async fetchPublicKey(): Promise<string | undefined> {
