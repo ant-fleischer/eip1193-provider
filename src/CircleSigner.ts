@@ -1,13 +1,13 @@
-import { Signer, TransactionLike, TransactionRequest, TransactionResponse } from 'ethers';
+import { ethers, Signer, TransactionLike, TransactionRequest, TransactionResponse } from 'ethers';
 import CircleEIP1193Provider from './CircleEIP1193Provider';
 
-class CircleSigner {
+class CircleSigner implements ethers.Signer {
     provider: CircleEIP1193Provider;
     private address: string; 
 
     constructor(provider: CircleEIP1193Provider) {
         this.provider = provider;
-        this.address = ""
+        this.address = provider.getAddress()
     }
 
     getAddress(): Promise<string> {

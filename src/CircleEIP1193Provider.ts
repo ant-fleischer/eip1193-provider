@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { encryptEntitySecret } from './utils/helpers';
-import { ethers, TransactionRequest, TransactionResponse } from 'ethers';
+import { ethers, Network, TransactionRequest, TransactionResponse } from 'ethers';
 import CircleSigner from './CircleSigner';
 
 const API_URL = 'https://api.circle.com/v1/w3s';
@@ -57,14 +57,13 @@ class CircleEIP1193Provider {
   private publicKey: string | undefined;
   private walletSetId: string | undefined;
   private wallets: Map<string, string>;
+  provider;
 
   constructor(apiKey: string, publicKey: string = '', walletSetId: string = '', network: string = 'sepolia') {
-    super(network);
-
     this.apiKey = apiKey;
     this.publicKey = publicKey;
     this.walletSetId = walletSetId;
-
+    this.provider = this;
     this.client = axios.create({
       baseURL: API_URL,
       headers: {
@@ -73,6 +72,95 @@ class CircleEIP1193Provider {
     });
 
     this.wallets = new Map();
+  }
+
+  destroy(): void {
+    throw new Error('Method not implemented.');
+  }
+  getBlockNumber(): Promise<number> {
+    throw new Error('Method not implemented.');
+  }
+  getNetwork(): Promise<ethers.Network> {
+    throw new Error('Method not implemented.');
+  }
+  getFeeData(): Promise<ethers.FeeData> {
+    throw new Error('Method not implemented.');
+  }
+  getBalance(address: ethers.AddressLike, blockTag?: ethers.BlockTag): Promise<bigint> {
+    throw new Error('Method not implemented.');
+  }
+  getTransactionCount(address: ethers.AddressLike, blockTag?: ethers.BlockTag): Promise<number> {
+    throw new Error('Method not implemented.');
+  }
+  getCode(address: ethers.AddressLike, blockTag?: ethers.BlockTag): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  getStorage(address: ethers.AddressLike, position: ethers.BigNumberish, blockTag?: ethers.BlockTag): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  estimateGas(tx: TransactionRequest): Promise<bigint> {
+    throw new Error('Method not implemented.');
+  }
+  call(tx: TransactionRequest): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  broadcastTransaction(signedTx: string): Promise<TransactionResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getBlock(blockHashOrBlockTag: ethers.BlockTag | string, prefetchTxs?: boolean): Promise<null | ethers.Block> {
+    throw new Error('Method not implemented.');
+  }
+  getTransaction(hash: string): Promise<null | TransactionResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getTransactionReceipt(hash: string): Promise<null | ethers.TransactionReceipt> {
+    throw new Error('Method not implemented.');
+  }
+  getTransactionResult(hash: string): Promise<null | string> {
+    throw new Error('Method not implemented.');
+  }
+  getLogs(filter: ethers.Filter | ethers.FilterByBlockHash): Promise<Array<ethers.Log>> {
+    throw new Error('Method not implemented.');
+  }
+  resolveName(ensName: string): Promise<null | string> {
+    throw new Error('Method not implemented.');
+  }
+  lookupAddress(address: string): Promise<null | string> {
+    throw new Error('Method not implemented.');
+  }
+  waitForTransaction(hash: string, confirms?: number, timeout?: number): Promise<null | ethers.TransactionReceipt> {
+    throw new Error('Method not implemented.');
+  }
+  waitForBlock(blockTag?: ethers.BlockTag): Promise<ethers.Block> {
+    throw new Error('Method not implemented.');
+  }
+  sendTransaction?: ((tx: ethers.TransactionRequest) => Promise<ethers.TransactionResponse>) | undefined;
+  on(event: ethers.ProviderEvent, listener: ethers.Listener): Promise<this> {
+    throw new Error('Method not implemented.');
+  }
+  once(event: ethers.ProviderEvent, listener: ethers.Listener): Promise<this> {
+    throw new Error('Method not implemented.');
+  }
+  emit(event: ethers.ProviderEvent, ...args: Array<any>): Promise<boolean> {
+    throw new Error('Method not implemented.');
+  }
+  listenerCount(event?: ethers.ProviderEvent | undefined): Promise<number> {
+    throw new Error('Method not implemented.');
+  }
+  listeners(event?: ethers.ProviderEvent | undefined): Promise<Array<ethers.Listener>> {
+    throw new Error('Method not implemented.');
+  }
+  off(event: ethers.ProviderEvent, listener?: ethers.Listener): Promise<this> {
+    throw new Error('Method not implemented.');
+  }
+  removeAllListeners(event?: ethers.ProviderEvent | undefined): Promise<this> {
+    throw new Error('Method not implemented.');
+  }
+  addListener(event: ethers.ProviderEvent, listener: ethers.Listener): Promise<this> {
+    throw new Error('Method not implemented.');
+  }
+  removeListener(event: ethers.ProviderEvent, listener: ethers.Listener): Promise<this> {
+    throw new Error('Method not implemented.');
   }
   async request(args: { method: string; params?: Array<any> }): Promise<any> {
     switch (args.method) {
@@ -99,7 +187,13 @@ class CircleEIP1193Provider {
 
   setWallet(wallets: NewWalletResponse): void {
     wallets.data.wallets.forEach( (wallet) => {
-      this.wallets.set(wallet.blockchain, wallet.address);
+      const network = CircleToEcosystemBlockchainMap.get(wallet.blockchain)
+
+      if (network) {
+        this.wallets.set(network, wallet.address);
+      } else {
+        throw new Error(`${wallet.blockchain} is not present in CircleToEcosystemBlockchainMap`);
+      }
   })
   }
 
@@ -108,9 +202,11 @@ class CircleEIP1193Provider {
   }
 
   getAddress(): string {
-
-
-    return this.wallets.get(this.getNetwork())
+    const address = this.wallets.get('sepolia');
+    if (!address) {
+      throw new Error(`Address not found for network`);
+    }
+    return address;
   }
 
   async fetchPublicKey(): Promise<string | undefined> {
