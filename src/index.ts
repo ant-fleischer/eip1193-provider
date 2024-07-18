@@ -1,17 +1,21 @@
-import CircleEIP1193Provider from './CircleEIP1193Provider';
+import { ethers } from 'ethers';
 import { config } from './config';
+import { setupCircleProvider } from './setupCircleProvider';
 
-let provider: CircleEIP1193Provider | undefined;
-
-async function initializeProvider(): Promise<void> {
+async function main() {
   try {
-    provider = await CircleEIP1193Provider.create(config.apiKey);
+    const circleProvider = await setupCircleProvider(config.apiKey);
+
+    const provider = new ethers.BrowserProvider(circleProvider)
+    
     console.log('Provider initialized successfully');
+
+    const walletAddress = 'your-wallet-address'; // The appropriate wallet address from your CircleWallet instance
+    const signer = provider.getSigner();
+    
   } catch (error) {
-    console.error('Error initializing provider:', error);
+    console.error('Error setting up provider or performing transactions:', error);
   }
 }
 
-initializeProvider();
-
-export { provider };
+main();
