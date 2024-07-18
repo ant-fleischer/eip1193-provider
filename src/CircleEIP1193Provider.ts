@@ -33,6 +33,12 @@ interface NewWalletResponse {
   };
 }
 
+interface QueryContractResponse {
+  data: {
+    outputValues: Array<string>;
+    outputData: string;
+  };
+}
 class CircleEIP1193Provider {
   private apiKey: string;
   private client: AxiosInstance;
@@ -73,31 +79,50 @@ class CircleEIP1193Provider {
   }
 
   async createWallet(): Promise<NewWalletResponse | undefined> {
-    if (!this.walletSetId) {
-      throw new Error('Wallet set ID is not defined');
-    }
-    try {
-      const data = {
-        idempotencyKey: uuidv4(),
-        walletSetId: this.walletSetId,
-        accountType: 'SCA',
-        blockchains: ['MATIC-AMOY', 'ETH-SEPOLIA'],
-        count: 1,
-        entitySecretCiphertext: encryptEntitySecret(this.publicKey!)
-      };
-      const response = await this.client.post<NewWalletResponse>('/developer/wallets', data);
-      response.data.data.wallets.forEach((wallet) => {
-        this.wallets.set(wallet.blockchain, wallet.address);
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error creating wallet:', error);
-      return undefined;
-    }
+  if (!this.walletSetId) {
+    throw new Error('Wallet set ID is not defined');
   }
+  try {
+    const data = {
+      idempotencyKey: uuidv4(),
+      walletSetId: this.walletSetId,
+      accountType: 'SCA',
+      blockchains: ['MATIC-AMOY', 'ETH-SEPOLIA'],
+      count: 1,
+      entitySecretCiphertext: encryptEntitySecret(this.publicKey!)
+    };
+    const response = await this.client.post<NewWalletResponse>('/developer/wallets', data);
+    response.data.wallets.forEach((wallet) => {
+      this.wallets.set(wallet.blockchain, wallet.address);
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating wallet:', error);
+    return undefined;
+  }
+}
 
-  public static async create(apiKey: string): Promise<CircleEIP1193Provider> {
-    const instance = new CircleEIP1193Provider(apiKey);
+async queryContractState(address: string, blockchain: string, abiFunctionSignature?: string, abiParameters?: Array<string>): Promise<string | undefined> {
+  try {
+    const data: { address: string; blockchain: string; abiFunctionSignature?: string | null; abiParameters?: Array<string> | null } = {
+      address,
+      blockchain,
+      abiFunctionSignature: abiFunctionSignature || null,
+      abiParameters: abiParameters || null
+    };
+    const response = await this.client.post<QueryContractResponse>('/contracts/query', data);
+    console.log(response);
+    return response.data.data.outputData;
+  } catch (error) {
+    console.error('Error querying contract state:', error);
+    return undefined;
+  }
+}
+
+ public static async create(apiKey: string): Promise<CircleEIP1193Provider> {
+  const instance = new CircleEIP1193Provider(apiKey);
+
+  try {
     const publicKey = await instance.fetchPublicKey();
     if (!publicKey) {
       throw new Error('Failed to fetch public key');
@@ -109,9 +134,12 @@ class CircleEIP1193Provider {
       throw new Error('Failed to get wallet set ID');
     }
     instance.walletSetId = walletSetId;
-
-    return instance;
+  } catch (error) {
+    console.error('Error creating CircleEIP1193Provider:', error);
+    throw error;
   }
+
+  return instance;
 }
 
 export default CircleEIP1193Provider;
